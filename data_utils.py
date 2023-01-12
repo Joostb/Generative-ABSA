@@ -293,7 +293,32 @@ class ABSADataset(Dataset):
             self.inputs.append(tokenized_input)
             self.targets.append(tokenized_target)
 
+class InferenceDataset(Dataset):
+    def __init__(self, tokenizer, sents, max_len=128):
+        # 'data/aste/rest16/train.txt'
+        self.sents = sents
+        self.max_len = max_len
+        self.tokenizer = tokenizer
 
+        self.inputs = []
+        for i in range(len(sents)):
+            self.inputs.append(self.tokenizer.batch_encode_plus(
+                [sents[i]], max_length=self.max_len, pad_to_max_length=True, truncation=True,
+                return_tensors="pt",
+            ))
+
+
+    def __len__(self):
+        return len(self.inputs)
+
+    def __getitem__(self, index):
+
+        source_ids = self.inputs[index]["input_ids"].squeeze()
+        src_mask = self.inputs[index]["attention_mask"].squeeze()      # might need to squeeze
+
+        return {"source_ids": source_ids, "source_mask": src_mask, }
+
+ 
 def write_results_to_log(log_file_path, best_test_result, args, dev_results, test_results, global_steps):
     """
     Record dev and test results to log file
